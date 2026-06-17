@@ -4,8 +4,8 @@ from flask import Flask, request, redirect, session
 app = Flask(__name__)
 
 # --- 🔒 安全設定 ---
-app.secret_key = "x7#m9Z!qP2@sK5wE8$vR"  # 已幫你換成安全的防偽亂碼鋼印
-ADMIN_PASSWORD = "0802"                  # 你的專屬後台登入密碼
+app.secret_key = "x7#m9Z!qP2@sK5wE8$vR"
+ADMIN_PASSWORD = "0802"
 
 DB_FILE = "schedule.db"
 
@@ -31,89 +31,487 @@ def get_all_bookings():
         rows = cursor.fetchall()
     return {(r[0], r[1]): r[2] for r in rows}
 
-# --- 🎼 前端：藝術風課表主頁 ---
+SHARED_STYLES = """
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Noto+Serif+TC:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:     #0D0C0A;
+    --parchment: #F5EDD6;
+    --gold:    #C9A84C;
+    --gold-dim: #8a6e2f;
+    --velvet:  #8B1A1A;
+    --midnight:#2A3A5E;
+    --smoke:   #3a3530;
+    --mist:    #b5a98a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif TC', serif;
+    background-color: var(--ink);
+    color: var(--parchment);
+    min-height: 100vh;
+  }
+
+  /* ── 五線譜背景紋路 ── */
+  .staff-bg {
+    background-color: var(--ink);
+    background-image:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 22px,
+        rgba(180,160,100,0.10) 22px,
+        rgba(180,160,100,0.10) 23px
+      );
+    background-size: 100% 115px;
+  }
+
+  /* ── 頁面容器 ── */
+  .page-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  /* ── 標題區 ── */
+  .site-header { text-align: center; margin-bottom: 2.5rem; }
+
+  .site-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    line-height: 1.15;
+    text-shadow: 0 2px 24px rgba(201,168,76,0.25);
+  }
+
+  .site-title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--parchment);
+    opacity: 0.7;
+    font-size: 0.6em;
+    display: block;
+    letter-spacing: 0.25em;
+    margin-top: 0.4rem;
+  }
+
+  .staff-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.2rem auto;
+    max-width: 380px;
+    opacity: 0.5;
+  }
+  .staff-divider::before, .staff-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gold);
+  }
+  .staff-divider span { font-size: 1.1rem; color: var(--gold); }
+
+  .site-sub {
+    font-size: 0.72rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    text-transform: uppercase;
+  }
+  .site-sub strong { color: var(--gold); }
+
+  /* ── 通知訊息 ── */
+  .alert {
+    border-radius: 6px;
+    padding: 0.75rem 1.2rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.82rem;
+    text-align: center;
+    letter-spacing: 0.04em;
+    border-left: 3px solid;
+  }
+  .alert-error  { background: rgba(139,26,26,0.2);  border-color: var(--velvet); color: #f4a0a0; }
+  .alert-success{ background: rgba(42,58,94,0.3);   border-color: var(--midnight); color: #a0bff4; }
+
+  /* ── 課表 ── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(201,168,76,0.2);
+    box-shadow: 0 4px 40px rgba(0,0,0,0.6);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead tr {
+    background: rgba(13,12,10,0.9);
+    border-bottom: 2px solid rgba(201,168,76,0.35);
+  }
+
+  thead th {
+    padding: 0.9rem 0.6rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+    transition: background 0.18s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(201,168,76,0.04); }
+
+  td {
+    padding: 0.7rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    border-right: 1px solid rgba(201,168,76,0.06);
+    font-size: 0.78rem;
+  }
+  td:last-child { border-right: none; }
+
+  .slot-label {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--gold-dim);
+    font-size: 0.8rem;
+    background: rgba(13,12,10,0.6);
+    min-width: 72px;
+  }
+
+  /* 已被預約 */
+  .booked-cell {
+    background: rgba(139,26,26,0.12);
+    color: #e8a0a0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .booked-cell .note-icon { opacity: 0.6; margin-right: 3px; }
+
+  /* 空格輸入 */
+  .book-form { display: flex; gap: 5px; justify-content: center; align-items: center; }
+
+  .book-input {
+    background: rgba(245,237,214,0.05);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.72rem;
+    font-family: 'Noto Serif TC', serif;
+    color: var(--parchment);
+    width: 80px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .book-input::placeholder { color: rgba(181,169,138,0.4); }
+  .book-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(201,168,76,0.15);
+  }
+
+  .book-btn {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    font-size: 0.68rem;
+    font-family: 'Noto Serif TC', serif;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.55rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, transform 0.1s;
+  }
+  .book-btn:hover { background: rgba(201,168,76,0.15); color: #f0d590; }
+  .book-btn:active { transform: scale(0.95); }
+
+  /* ── 頁尾 ── */
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.8rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(201,168,76,0.1);
+    font-size: 0.72rem;
+    color: var(--mist);
+    letter-spacing: 0.1em;
+  }
+  .page-footer a {
+    color: var(--gold-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .page-footer a:hover { color: var(--gold); }
+
+  /* ── 登入頁 ── */
+  .login-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .login-card {
+    background: rgba(20,18,14,0.85);
+    border: 1px solid rgba(201,168,76,0.22);
+    border-radius: 14px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+  }
+  .login-icon {
+    font-size: 2.4rem;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.85;
+  }
+  .login-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.2rem;
+  }
+  .login-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--mist);
+    text-transform: uppercase;
+    margin-bottom: 1.8rem;
+  }
+  .login-label {
+    display: block;
+    text-align: left;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--mist);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+  }
+  .login-input {
+    width: 100%;
+    background: rgba(245,237,214,0.04);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+    font-family: 'Noto Serif TC', serif;
+    color: var(--parchment);
+    text-align: center;
+    letter-spacing: 0.2em;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1.2rem;
+  }
+  .login-input:focus { border-color: var(--gold); }
+  .login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #b8922a 0%, #d4a84b 50%, #b8922a 100%);
+    color: var(--ink);
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .login-btn:hover { opacity: 0.9; }
+  .login-btn:active { transform: scale(0.98); }
+  .login-back {
+    display: block;
+    margin-top: 1.4rem;
+    font-size: 0.7rem;
+    color: var(--mist);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    transition: color 0.2s;
+  }
+  .login-back:hover { color: var(--gold); }
+
+  /* ── 後台頁 ── */
+  .admin-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+  .admin-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .admin-sub { font-size: 0.68rem; color: var(--mist); margin-top: 0.2rem; letter-spacing: 0.15em; }
+  .admin-links { display: flex; gap: 1.2rem; font-size: 0.72rem; }
+  .admin-links a { color: var(--mist); text-decoration: none; letter-spacing: 0.1em; transition: color 0.2s; }
+  .admin-links a:hover { color: var(--gold); }
+  .admin-links a.danger:hover { color: #f4a0a0; }
+
+  .admin-grid { display: grid; grid-template-columns: 1fr 280px; gap: 1.5rem; align-items: start; }
+  @media(max-width:700px){ .admin-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: rgba(20,18,14,0.7);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 0.8rem 1.2rem;
+    background: rgba(13,12,10,0.8);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--mist);
+    text-transform: uppercase;
+  }
+
+  .admin-table { width: 100%; border-collapse: collapse; }
+  .admin-table th {
+    padding: 0.7rem 1rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mist);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    text-align: left;
+  }
+  .admin-table td {
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(201,168,76,0.06);
+    color: var(--parchment);
+    text-align: left;
+  }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-table tr:hover td { background: rgba(201,168,76,0.03); }
+
+  .del-btn {
+    background: none;
+    border: 1px solid rgba(139,26,26,0.5);
+    color: #d08080;
+    font-size: 0.68rem;
+    font-family: 'Noto Serif TC', serif;
+    letter-spacing: 0.08em;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+  .del-btn:hover { background: rgba(139,26,26,0.2); color: #f4a0a0; }
+
+  .empty-note {
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--mist);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    font-style: italic;
+  }
+</style>
+"""
+
+# --- 前端：課表主頁 ---
 @app.route("/")
 def index_page():
     error = request.args.get("error", "")
     success = request.args.get("success", "")
     bookings = get_all_bookings()
-    
+
     table_rows = ""
     for slot in SLOTS:
-        table_rows += f"<tr class='border-b border-slate-800/60 hover:bg-slate-800/30 transition-colors'>"
-        table_rows += f"<td class='p-4 bg-slate-900/80 font-medium text-amber-400/90 text-center border-r border-slate-800'>{slot}</td>"
+        table_rows += f"<tr>"
+        table_rows += f"<td class='slot-label'>{slot}</td>"
         for day in DAYS:
             name = bookings.get((day, slot), "")
             if name:
-                # 已被登記：優雅的絲絨紅與樂章保留感
-                table_rows += f"<td class='p-4 bg-rose-950/20 text-rose-300 font-medium text-center border-r border-slate-800/40 shadow-inner'>🎵 {name} 的專屬樂章</td>"
+                table_rows += f"<td class='booked-cell'><span class='note-icon'>♩</span>{name}</td>"
             else:
-                # 尚可登記：像鋼琴琴鍵般的極簡輸入框
                 table_rows += f"""
-                <td class='p-3 text-center border-r border-slate-800/40'>
-                    <form action='/book' method='post' class='flex gap-2 justify-center items-center'>
-                        <input type='hidden' name='day' value='{day}'>
-                        <input type='hidden' name='slot' value='{slot}'>
-                        <input type='text' name='name' placeholder='吟唱者姓名' required 
-                               class='bg-slate-900/60 border border-slate-700/50 rounded-md px-2 py-1 text-xs text-slate-200 w-24 text-center placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all'>
-                        <button type='submit' class='bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold px-2.5 py-1 rounded shadow-md active:scale-95 transition-all cursor-pointer'>預約</button>
-                    </form>
+                <td>
+                  <form action='/book' method='post' class='book-form'>
+                    <input type='hidden' name='day' value='{day}'>
+                    <input type='hidden' name='slot' value='{slot}'>
+                    <input type='text' name='name' placeholder='姓名' required class='book-input'>
+                    <button type='submit' class='book-btn'>預約</button>
+                  </form>
                 </td>
                 """
         table_rows += "</tr>"
 
     alert_html = ""
     if error:
-        alert_html = f"<div class='bg-rose-950/40 border border-rose-800/60 text-rose-300 px-4 py-3 rounded-lg mb-6 text-center text-sm backdrop-blur-sm'>⚠️ {error}</div>"
+        alert_html = f"<div class='alert alert-error'>⚠ {error}</div>"
     elif success:
-        alert_html = f"<div class='bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 px-4 py-3 rounded-lg mb-6 text-center text-sm backdrop-blur-sm'>✨ {success}</div>"
+        alert_html = f"<div class='alert alert-success'>✦ {success}</div>"
 
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>樂章共鳴：時段預約表</title>
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-        <style>
-            body {{ background-image: radial-gradient(circle at top, #1e1b4b 0%, #020617 100%); }}
-        </style>
-    </head>
-    <body class="text-slate-200 min-h-screen p-4 md:p-8 flex items-center justify-center">
-        <div class="w-full max-w-6xl bg-slate-900/40 backdrop-blur-md p-6 md:p-10 rounded-2xl shadow-2xl border border-slate-800/80">
-            
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 mb-3 drop-shadow-sm">
-                    🎼 樂章共鳴：線上時段預約表
-                </h1>
-                <p class="text-slate-400 text-xs tracking-widest uppercase">
-                    尋找你的專屬節奏 ‧ 每人上限演繹 <span class="text-amber-400 font-bold">5</span> 個時段
-                </p>
-            </div>
+    day_headers = "".join(f"<th>{d}</th>" for d in DAYS)
 
-            {alert_html}
+    return f"""<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <title>樂章共鳴 · 時段預約</title>
+  {SHARED_STYLES}
+</head>
+<body class="staff-bg">
+  <div class="page-wrap">
 
-            <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/20 shadow-xl">
-                <table class="w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800">
-                            <th class="p-4 w-32 font-medium tracking-wider text-amber-400/80 text-center">時段 \ 星期</th>
-                            {"".join(f"<th class='p-4 font-semibold tracking-widest text-center border-r border-slate-800/40'>{day}</th>" for day in DAYS)}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {table_rows}
-                    </tbody>
-                </table>
-            </div>
+    <header class="site-header">
+      <h1 class="site-title">
+        樂章共鳴
+        <em>Harmonia · 時段預約系統</em>
+      </h1>
+      <div class="staff-divider"><span>𝄞</span></div>
+      <p class="site-sub">尋找你的專屬節奏 &middot; 每人上限演繹 <strong>5</strong> 個時段</p>
+    </header>
 
-            <div class="mt-8 flex justify-between items-center text-xs text-slate-500 px-2">
-                <div>🎻 琴房容納上限：10 人</div>
-                <a href="/admin" class="hover:text-amber-400 transition-colors underline underline-offset-4 tracking-wider">🎹 進入後台指揮台</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    {alert_html}
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:72px">時段</th>
+            {day_headers}
+          </tr>
+        </thead>
+        <tbody>
+          {table_rows}
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="page-footer">
+      <span>🎻 琴房容納上限：10 人</span>
+      <a href="/admin">指揮台後台 →</a>
+    </footer>
+
+  </div>
+</body>
+</html>"""
 
 # --- 登記邏輯 ---
 @app.route("/book", methods=["POST"])
@@ -121,176 +519,151 @@ def book_slot():
     day = request.form.get("day")
     slot = request.form.get("slot")
     name = request.form.get("name", "").strip()
-    
+
     if not name:
         return redirect("/?error=名字不能為空！")
-        
+
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM bookings WHERE student_name = ?", (name,))
         count = cursor.fetchone()[0]
         if count >= 5:
-            return redirect(f"/?error=已達 5 個時段演繹上限。")
-        
+            return redirect("/?error=已達 5 個時段演繹上限。")
         try:
             cursor.execute("INSERT INTO bookings (day, slot, student_name) VALUES (?, ?, ?)", (day, slot, name))
             conn.commit()
         except sqlite3.IntegrityError:
             return redirect("/?error=此時段已被其他演出者捷足先登。")
-            
+
     return redirect(f"/?success=【{name}】已成功預約 {day} {slot}。")
 
-# --- 🔐 後台：後台控制室登入 ---
+# --- 後台登入 ---
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     error_msg = ""
     if request.method == "POST":
-        input_password = request.form.get("password")
-        if input_password == ADMIN_PASSWORD:
+        if request.form.get("password") == ADMIN_PASSWORD:
             session["is_admin"] = True
             return redirect("/admin")
         else:
-            error_msg = "<p class='text-rose-400 text-xs mb-3 text-center tracking-wide'>❌ 密鑰不符，無法開啟指揮門</p>"
+            error_msg = "<div class='alert alert-error' style='margin-bottom:1rem'>✕ 密鑰不符，無法開啟指揮門</div>"
 
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>後台控制室</title>
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-        <style>
-            body {{ background-image: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%); }}
-        </style>
-    </head>
-    <body class="text-slate-200 flex items-center justify-center h-screen p-4">
-        <div class="bg-slate-900/60 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-800 text-center">
-            <div class="text-3xl mb-3">🎹</div>
-            <h2 class="text-xl font-bold mb-1 tracking-widest text-amber-400">後台指揮室</h2>
-            <p class="text-slate-500 text-xs mb-6 tracking-wider uppercase">Conductor Control Room</p>
-            {error_msg}
-            <form method="post" class="text-left">
-                <div class="mb-5">
-                    <label class="block text-slate-400 text-xs font-medium mb-2 tracking-wider">輸入指揮密鑰 (Password)</label>
-                    <input type="password" name="password" required 
-                           class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all text-center tracking-widest">
-                </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-2.5 rounded-lg shadow-lg active:scale-[0.98] transition-all cursor-pointer tracking-widest text-sm">解鎖控制台</button>
-            </form>
-            <div class="mt-6">
-                <a href="/" class="text-xs text-slate-500 hover:text-slate-300 transition-colors underline underline-offset-4">⬅️ 返回前台樂章</a>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+    return f"""<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <title>指揮台 · 登入</title>
+  {SHARED_STYLES}
+</head>
+<body class="staff-bg">
+  <div class="login-wrap">
+    <div class="login-card">
+      <span class="login-icon">𝄢</span>
+      <h2 class="login-title">後台指揮室</h2>
+      <p class="login-sub">Conductor Control Room</p>
+      {error_msg}
+      <form method="post">
+        <label class="login-label">輸入指揮密鑰</label>
+        <input type="password" name="password" required class="login-input" placeholder="· · · ·">
+        <button type="submit" class="login-btn">解鎖控制台</button>
+      </form>
+      <a href="/" class="login-back">← 返回前台樂章</a>
+    </div>
+  </div>
+</body>
+</html>"""
 
-# --- 🎻 後台：指揮台管理中心 ---
+# --- 後台管理 ---
 @app.route("/admin")
 def admin_page():
     if not session.get("is_admin"):
         return redirect("/admin/login")
-        
+
     bookings = get_all_bookings()
     student_counts = {}
     for name in bookings.values():
         student_counts[name] = student_counts.get(name, 0) + 1
-        
+
     admin_rows = ""
     for day in DAYS:
         for slot in SLOTS:
             name = bookings.get((day, slot), "")
             if name:
                 admin_rows += f"""
-                <tr class='border-b border-slate-800 hover:bg-slate-800/30 transition-colors text-sm'>
-                    <td class='px-6 py-3.5 font-medium text-slate-300'>{day}</td>
-                    <td class='px-6 py-3.5 text-amber-400/80'>{slot}</td>
-                    <td class='px-6 py-3.5 font-semibold text-rose-300'>✨ {name}</td>
-                    <td class='px-6 py-3.5 text-center'>
-                        <form action='/admin/delete' method='post'>
-                            <input type='hidden' name='day' value='{day}'>
-                            <input type='hidden' name='slot' value='{slot}'>
-                            <button type='submit' class='bg-rose-950/60 hover:bg-rose-900 border border-rose-800/50 text-rose-300 text-xs px-3 py-1 rounded-md transition-all cursor-pointer active:scale-95'>變更/取消</button>
-                        </form>
-                    </td>
-                </tr>
-                """
-                
-    student_summary_rows = "".join(
-        f"<tr class='border-b border-slate-800 hover:bg-slate-800/20'><td class='px-4 py-3 text-slate-300'>{s}</td><td class='px-4 py-3 text-center font-bold text-amber-400'>{c} / 5 節</td></tr>"
+                <tr>
+                  <td style="color:var(--gold-dim)">{day}</td>
+                  <td>{slot}</td>
+                  <td style="color:#e8a0a0">♩ {name}</td>
+                  <td>
+                    <form action='/admin/delete' method='post'>
+                      <input type='hidden' name='day' value='{day}'>
+                      <input type='hidden' name='slot' value='{slot}'>
+                      <button type='submit' class='del-btn'>取消預約</button>
+                    </form>
+                  </td>
+                </tr>"""
+
+    summary_rows = "".join(
+        f"<tr><td>{s}</td><td style='text-align:center;color:var(--gold);font-weight:600'>{c} / 5</td></tr>"
         for s, c in student_counts.items()
     )
 
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>指揮台管理中心</title>
-        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-        <style>
-            body {{ background-image: radial-gradient(circle at top, #0f172a 0%, #020617 100%); }}
-        </style>
-    </head>
-    <body class="text-slate-200 min-h-screen p-4 md:p-8">
-        <div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-6">
-            
-            <div class="flex-1 bg-slate-900/50 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-800">
-                <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-800">
-                    <div>
-                        <h2 class="text-xl font-bold text-amber-400 tracking-wider">🎻 指揮台：預約節目清單</h2>
-                        <p class="text-slate-500 text-xs mt-1">目前所有已被演繹的時間點</p>
-                    </div>
-                    <div class="flex gap-4 text-xs">
-                        <a href="/" class="text-amber-400/80 hover:text-amber-300 transition-colors underline underline-offset-4">⬅️ 前台課表</a>
-                        <a href="/admin/logout" class="text-rose-400/80 hover:text-rose-300 transition-colors underline underline-offset-4">安全登出</a>
-                    </div>
-                </div>
-                
-                <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                    <table class="w-full border-collapse text-left">
-                        <thead>
-                            <tr class="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                                <th class="px-6 py-3 font-medium">星期</th>
-                                <th class="px-6 py-3 font-medium">時段</th>
-                                <th class="px-4 py-3 font-medium">演出者</th>
-                                <th class="px-6 py-3 text-center font-medium">席次操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {admin_rows if admin_rows else "<tr><td colspan='4' class='text-center p-8 text-slate-500 text-sm tracking-widest'>🎵 尚無任何激盪出的樂章 (無人預約)</td></tr>"}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div class="w-full lg:w-80 bg-slate-900/50 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-800 h-fit">
-                <h2 class="text-lg font-bold text-amber-400 tracking-wider mb-2">👥 演出者小節統計</h2>
-                <p class="text-slate-500 text-xs mb-4 pb-2 border-b border-slate-800">監控每人 5 小節上限進度</p>
-                
-                <div class="rounded-xl border border-slate-800/80 overflow-hidden">
-                    <table class="w-full border-collapse text-sm text-left">
-                        <thead>
-                            <tr class="bg-slate-950/80 text-slate-400 text-xs tracking-wider border-b border-slate-800">
-                                <th class="px-4 py-2.5 font-medium">姓名</th>
-                                <th class="px-4 py-2.5 text-center font-medium">已填節數</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {student_summary_rows if student_summary_rows else "<tr><td colspan='2' class='text-center p-6 text-slate-500 text-xs'>暫無演出者數據</td></tr>"}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-        </div>
-    </body>
-    </html>
-    """
+    return f"""<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <title>指揮台管理中心</title>
+  {SHARED_STYLES}
+</head>
+<body class="staff-bg">
+  <div class="admin-wrap">
+
+    <div class="admin-header">
+      <div>
+        <div class="admin-title">🎻 指揮台管理中心</div>
+        <div class="admin-sub">Conductor Dashboard · 預約節目清單</div>
+      </div>
+      <div class="admin-links">
+        <a href="/">← 前台課表</a>
+        <a href="/admin/logout" class="danger">安全登出</a>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+
+      <div class="card">
+        <div class="card-head">已預約時段一覽</div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>星期</th><th>時段</th><th>演出者</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {admin_rows if admin_rows else "<tr><td colspan='4' class='empty-note'>𝄽 尚無任何預約紀錄</td></tr>"}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head">演出者節數統計</div>
+        <table class="admin-table">
+          <thead>
+            <tr><th>姓名</th><th style="text-align:center">已填 / 上限</th></tr>
+          </thead>
+          <tbody>
+            {summary_rows if summary_rows else "<tr><td colspan='2' class='empty-note'>暫無資料</td></tr>"}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>"""
 
 @app.route("/admin/delete", methods=["POST"])
 def delete_slot():
     if not session.get("is_admin"):
         return "權限不足！請先登入指揮台。", 403
-        
     day = request.form.get("day")
     slot = request.form.get("slot")
     with sqlite3.connect(DB_FILE) as conn:
