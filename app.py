@@ -1,5 +1,6 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+TZ_TAIPEI = timezone(timedelta(hours=8))
 from flask import Flask, request, redirect, session, url_for
 
 app = Flask(__name__)
@@ -565,7 +566,7 @@ def book_slot():
             seen.add((day, slot))
             unique_entries.append((day, slot, p))
 
-    now_str = datetime.now().isoformat()
+    now_str = datetime.now(TZ_TAIPEI).strftime("%Y-%m-%dT%H:%M:%S")
     with db() as conn:
         # 確認此學生尚未預約（同一人不重複送出）
         existing = conn.execute(
