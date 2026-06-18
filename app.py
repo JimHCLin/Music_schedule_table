@@ -207,6 +207,34 @@ body::after{
   font-size:.68rem;color:var(--mist2);margin-top:.3rem;letter-spacing:.04em;
 }
 
+/* ── 按鈕式選單（手機友善） ── */
+.btn-group{position:relative;flex:1}
+.bg-placeholder{
+  width:100%;background:#1a1628;
+  border:1px solid rgba(201,168,76,.28);border-radius:6px;
+  padding:.65rem .8rem;font-size:.9rem;
+  font-family:'Noto Serif TC',serif;color:rgba(181,169,138,.5);
+  text-align:left;cursor:pointer;min-height:44px;
+  transition:border-color .2s;
+}
+.bg-placeholder.selected{color:var(--parch);border-color:rgba(201,168,76,.5)}
+.bg-options{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:#1a1628;border:1px solid rgba(201,168,76,.3);
+  border-radius:8px;z-index:100;
+  box-shadow:0 8px 30px rgba(0,0,0,.7);
+  overflow:hidden;
+}
+.bg-opt{
+  display:block;width:100%;background:none;border:none;border-bottom:1px solid rgba(201,168,76,.08);
+  padding:.75rem 1rem;font-size:.9rem;
+  font-family:'Noto Serif TC',serif;color:var(--parch);
+  text-align:left;cursor:pointer;min-height:44px;
+  transition:background .15s;
+}
+.bg-opt:last-child{border-bottom:none}
+.bg-opt:hover,.bg-opt:active{background:rgba(201,168,76,.12);color:var(--gold)}
+
 /* 優先序標籤 */
 .priority-slots{display:flex;flex-direction:column;gap:.5rem;margin-top:.8rem}
 .priority-row{
@@ -434,6 +462,28 @@ body::after{
 </style>
 """
 
+BTN_JS = """<script>
+function toggleGroup(btn){
+  var opts=btn.nextElementSibling;
+  document.querySelectorAll(".bg-options").forEach(function(el){if(el!==opts)el.style.display="none";});
+  opts.style.display=opts.style.display==="none"?"block":"none";
+}
+function selectOpt(btn){
+  var g=btn.closest(".btn-group");
+  g.querySelector("input[type=hidden]").value=btn.dataset.val;
+  var ph=g.querySelector(".bg-placeholder");
+  ph.textContent=btn.dataset.val+" \u2713";
+  ph.classList.add("selected");
+  btn.closest(".bg-options").style.display="none";
+}
+document.addEventListener("click",function(e){
+  if(!e.target.closest(".btn-group"))
+    document.querySelectorAll(".bg-options").forEach(function(el){el.style.display="none";});
+});
+</script>"""
+
+
+
 # ── 前台主頁 ──────────────────────────────────────────
 @app.route("/")
 def index_page():
@@ -470,27 +520,24 @@ def index_page():
     elif success:
         alert_html = f"<div class='alert alert-success'>✦ {success}</div>"
 
-    # ── 優先序選擇欄 ──
-    day_opts   = "".join(f"<option value='{d}'>{d}</option>" for d in DAYS)
-    slot_opts  = "".join(f"<option value='{s}'>{s}</option>" for s in SLOTS)
+    # ── 優先序選擇欄（按鈕式，手機友善）──
+    def btn_group(name, options, placeholder):
+        btns = f"<div class='btn-group' data-name='{name}'>"
+        btns += f"<input type='hidden' name='{name}' value='' required>"
+        btns += f"<button type='button' class='bg-placeholder' onclick='toggleGroup(this)'>{placeholder} ▾</button>"
+        btns += f"<div class='bg-options' style='display:none'>"
+        for val in options:
+            btns += f"<button type='button' class='bg-opt' onclick='selectOpt(this)' data-val='{val}'>{val}</button>"
+        btns += "</div></div>"
+        return btns
 
     priority_rows = ""
     for p in range(1, MAX_PRIORITY + 1):
         priority_rows += f"""
         <div class='priority-row'>
           <span class='priority-num'>{p}</span>
-          <div class='form-field'>
-            <select name='day_{p}' required>
-              <option value=''>選擇星期</option>
-              {day_opts}
-            </select>
-          </div>
-          <div class='form-field'>
-            <select name='slot_{p}' required>
-              <option value=''>選擇堂數</option>
-              {slot_opts}
-            </select>
-          </div>
+          {btn_group(f'day_{p}', DAYS, '選擇星期')}
+          {btn_group(f'slot_{p}', SLOTS, '選擇堂數')}
         </div>"""
 
     return f"""<!DOCTYPE html>
@@ -540,9 +587,11 @@ def index_page():
 
   <footer class="page-footer">
     <span>🎻 週四・週五 · 各 8 堂</span>
+    <span style="color:var(--mist2);font-size:.62rem;letter-spacing:.1em">v1.5</span>
     <a href="/admin">指揮台後台 →</a>
   </footer>
 </div>
+{BTN_JS}
 </body>
 </html>"""
 
