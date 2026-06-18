@@ -163,9 +163,10 @@ body::after{
 
 /* ── 前台：預約表單區 ── */
 .form-section{
-  background:rgba(13,11,20,.8);border:1px solid rgba(201,168,76,.15);
+  background:rgba(13,11,20,.92);border:1px solid rgba(201,168,76,.15);
   border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;
   box-shadow:0 0 60px rgba(0,0,0,.6);
+  position:relative;z-index:2;
 }
 .form-section h2{
   font-family:'Playfair Display',serif;font-size:1rem;
@@ -180,21 +181,26 @@ body::after{
   color:var(--mist2);text-transform:uppercase;margin-bottom:.35rem;
 }
 .form-field select,.form-field input[type=text],.form-field input[type=number]{
-  width:100%;background:rgba(245,237,214,.04);
-  border:1px solid rgba(201,168,76,.2);border-radius:6px;
-  padding:.6rem .8rem;font-size:.85rem;
+  width:100%;background:#1a1628;
+  border:1px solid rgba(201,168,76,.28);border-radius:6px;
+  padding:.65rem .8rem;font-size:1rem;
   font-family:'Noto Serif TC',serif;color:var(--parch);outline:none;
   transition:border-color .2s,box-shadow .2s;
   -webkit-appearance:none;appearance:none;
+  position:relative;z-index:1;
+  touch-action:manipulation;
+  min-height:44px;
 }
 .form-field select{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a6e2f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right .7rem center;
-  padding-right:2rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A84C' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .8rem center;
+  background-color:#1a1628;
+  padding-right:2.2rem;
+  cursor:pointer;
 }
 .form-field select option{background:#1a1628;color:var(--parch)}
 .form-field select:focus,.form-field input:focus{
-  border-color:rgba(201,168,76,.45);box-shadow:0 0 12px rgba(201,168,76,.08);
+  border-color:rgba(201,168,76,.6);box-shadow:0 0 12px rgba(201,168,76,.1);
 }
 
 .priority-hint{
