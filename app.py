@@ -392,59 +392,72 @@ body::after{
   font-size:.8rem;color:var(--gold-dim);letter-spacing:.05em;
 }
 .admin-booking-row{
-  display:grid;
-  grid-template-columns:28px 1fr auto auto;
-  gap:.6rem;align-items:center;
-  padding:.6rem .9rem;
-  border-bottom:1px solid rgba(201,168,76,.05);
+  display:flex;flex-direction:column;gap:.6rem;
+  padding:.9rem;
+  border-bottom:1px solid rgba(201,168,76,.07);
 }
 .admin-booking-row:last-child{border-bottom:none}
 
+.admin-row-top{display:flex;align-items:center;gap:.7rem}
+.admin-row-actions{display:flex;flex-wrap:wrap;gap:.5rem;padding-left:32px}
+
 .rank-badge{
-  width:24px;height:24px;border-radius:50%;
+  width:28px;height:28px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-size:.7rem;font-weight:700;flex-shrink:0;
+  font-size:.75rem;font-weight:700;flex-shrink:0;
 }
 .rank-1{background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.5);color:var(--gold)}
 .rank-other{background:rgba(80,80,80,.15);border:1px solid rgba(180,169,138,.15);color:var(--mist2)}
 
-.booking-info{min-width:0}
-.booking-name{font-size:.82rem;color:var(--parch);font-weight:600}
-.booking-meta{font-size:.65rem;color:var(--mist2);margin-top:.1rem;letter-spacing:.03em}
+.booking-info{min-width:0;flex:1}
+.booking-name{font-size:.9rem;color:var(--parch);font-weight:600}
+.booking-meta{font-size:.68rem;color:var(--mist2);margin-top:.15rem}
 .student-priority{
   display:inline-block;font-size:.62rem;
   background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);
   border-radius:10px;padding:.05rem .4rem;color:var(--gold-dim);
-  white-space:nowrap;
 }
 
-.order-form{display:flex;align-items:center;gap:.3rem}
-.order-input{
-  width:44px;background:rgba(245,237,214,.05);
-  border:1px solid rgba(201,168,76,.2);border-radius:4px;
-  padding:.25rem .3rem;font-size:.75rem;color:var(--parch);
-  text-align:center;outline:none;font-family:'Noto Serif TC',serif;
-}
+/* 操作群組標籤 */
+.action-group{display:flex;align-items:center;gap:.35rem}
+.action-label{font-size:.6rem;color:var(--mist2);letter-spacing:.08em;white-space:nowrap}
+
+.order-form{display:flex;align-items:center;gap:.35rem}
 .order-btn{
-  background:none;border:1px solid rgba(201,168,76,.3);
-  color:var(--gold-dim);font-size:.65rem;padding:.25rem .45rem;
-  border-radius:4px;cursor:pointer;font-family:'Noto Serif TC',serif;
-  transition:background .18s,color .18s;white-space:nowrap;
+  background:rgba(20,18,28,.8);
+  border:1px solid rgba(201,168,76,.3);
+  color:var(--gold-dim);
+  font-size:.82rem;
+  min-width:44px;min-height:44px;
+  padding:.3rem .6rem;
+  border-radius:6px;cursor:pointer;
+  font-family:'Noto Serif TC',serif;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s,color .18s,border-color .18s;
 }
-.order-btn:hover{background:rgba(201,168,76,.12);color:var(--gold)}
+.order-btn:hover{background:rgba(201,168,76,.12);color:var(--gold);border-color:rgba(201,168,76,.5)}
+.order-btn:active{transform:scale(.95)}
 
 .del-btn{
-  background:none;border:1px solid rgba(139,26,26,.4);
-  color:#b07070;font-size:.65rem;padding:.25rem .45rem;
-  border-radius:4px;cursor:pointer;font-family:'Noto Serif TC',serif;
-  transition:background .18s,color .18s;white-space:nowrap;
+  background:rgba(20,18,28,.8);
+  border:1px solid rgba(139,26,26,.45);
+  color:#b07070;
+  font-size:.82rem;
+  min-width:44px;min-height:44px;
+  padding:.3rem .8rem;
+  border-radius:6px;cursor:pointer;
+  font-family:'Noto Serif TC',serif;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .18s,color .18s;
 }
 .del-btn:hover{background:rgba(139,26,26,.2);color:#f4a0a0}
+.del-btn:active{transform:scale(.95)}
+.order-btn.pri-active{background:rgba(201,168,76,.18);border-color:rgba(201,168,76,.65);color:var(--gold)}
 
 .empty-note{text-align:center;padding:2rem;color:var(--mist2);font-size:.75rem;font-style:italic;opacity:.7}
 
 /* 後台統計 */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.7rem;margin-bottom:1.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.7rem;margin-bottom:1.5rem}
 .stat-card{
   background:rgba(13,11,20,.75);border:1px solid rgba(201,168,76,.1);
   border-radius:8px;padding:.8rem;text-align:center;
@@ -453,11 +466,11 @@ body::after{
 .stat-count{font-size:1.3rem;font-weight:700;color:var(--gold)}
 .stat-limit{font-size:.65rem;color:var(--mist2)}
 
-/* 手機優化 */
+/* 手機 */
 @media(max-width:480px){
-  .admin-booking-row{grid-template-columns:24px 1fr;row-gap:.3rem}
-  .admin-booking-row .order-form,.admin-booking-row .del-btn{grid-column:2}
+  .admin-wrap{padding:1rem .7rem 3rem}
   .page{padding:2rem .8rem 3rem}
+  .admin-row-actions{padding-left:0}
 }
 </style>
 """
@@ -695,39 +708,55 @@ def admin_page():
                     cur_order = r["admin_order"] if r["admin_order"] is not None else ""
                     slot_sections += f"""
                     <div class='admin-booking-row'>
-                      <span class='rank-badge {badge_cls}'>{rank}</span>
-                      <div class='booking-info'>
-                        <div class='booking-name'>{r['student_name']}</div>
-                        <div class='booking-meta'>填表時間：{dt}</div>
+                      <div class='admin-row-top'>
+                        <span class='rank-badge {badge_cls}'>{rank}</span>
+                        <div class='booking-info'>
+                          <div class='booking-name'>{r['student_name']}</div>
+                          <div class='booking-meta'>填表時間：{dt}</div>
+                        </div>
                       </div>
-                      <form action='/admin/set_priority' method='post' class='order-form' title='修改學生志願序'>
-                        <input type='hidden' name='booking_id' value='{r["id"]}'>
-                        <select name='priority_val' class='order-input' style='width:58px;padding:.22rem .25rem'>
-                          <option value='1' {'selected' if r['priority']==1 else ''}>志願①</option>
-                          <option value='2' {'selected' if r['priority']==2 else ''}>志願②</option>
-                          <option value='3' {'selected' if r['priority']==3 else ''}>志願③</option>
-                        </select>
-                        <button type='submit' class='order-btn'>改</button>
-                      </form>
-                      <form action='/admin/reorder' method='post' style='display:flex;gap:3px'>
-                        <input type='hidden' name='booking_id' value='{r["id"]}'>
-                        <input type='hidden' name='day' value='{day}'>
-                        <input type='hidden' name='slot' value='{slot}'>
-                        <input type='hidden' name='direction' value='up'>
-                        <button type='submit' class='order-btn' title='上移（提高排名）'>↑</button>
-                      </form>
-                      <form action='/admin/reorder' method='post' style='display:flex;gap:3px'>
-                        <input type='hidden' name='booking_id' value='{r["id"]}'>
-                        <input type='hidden' name='day' value='{day}'>
-                        <input type='hidden' name='slot' value='{slot}'>
-                        <input type='hidden' name='direction' value='down'>
-                        <button type='submit' class='order-btn' title='下移（降低排名）'>↓</button>
-                      </form>
-                      <form action='/admin/delete' method='post'>
-                        <input type='hidden' name='booking_id' value='{r["id"]}'>
-                        <button type='submit' class='del-btn'
-                          onclick="return confirm('確定刪除 {r['student_name']} 的這筆預約？')">刪除</button>
-                      </form>
+                      <div class='admin-row-actions'>
+                        <div class='action-group'>
+                          <span class='action-label'>志願序</span>
+                          <form action='/admin/set_priority' method='post' style='display:inline'>
+                            <input type='hidden' name='booking_id' value='{r["id"]}'>
+                            <input type='hidden' name='priority_val' value='1'>
+                            <button type='submit' class='order-btn {"pri-active" if r["priority"]==1 else ""}'>①</button>
+                          </form>
+                          <form action='/admin/set_priority' method='post' style='display:inline'>
+                            <input type='hidden' name='booking_id' value='{r["id"]}'>
+                            <input type='hidden' name='priority_val' value='2'>
+                            <button type='submit' class='order-btn {"pri-active" if r["priority"]==2 else ""}'>②</button>
+                          </form>
+                          <form action='/admin/set_priority' method='post' style='display:inline'>
+                            <input type='hidden' name='booking_id' value='{r["id"]}'>
+                            <input type='hidden' name='priority_val' value='3'>
+                            <button type='submit' class='order-btn {"pri-active" if r["priority"]==3 else ""}'>③</button>
+                          </form>
+                        </div>
+                        <div class='action-group'>
+                          <span class='action-label'>排名</span>
+                          <form action='/admin/reorder' method='post' style='display:inline'>
+                            <input type='hidden' name='booking_id' value='{r["id"]}'>
+                            <input type='hidden' name='day' value='{day}'>
+                            <input type='hidden' name='slot' value='{slot}'>
+                            <input type='hidden' name='direction' value='up'>
+                            <button type='submit' class='order-btn'>↑</button>
+                          </form>
+                          <form action='/admin/reorder' method='post' style='display:inline'>
+                            <input type='hidden' name='booking_id' value='{r["id"]}'>
+                            <input type='hidden' name='day' value='{day}'>
+                            <input type='hidden' name='slot' value='{slot}'>
+                            <input type='hidden' name='direction' value='down'>
+                            <button type='submit' class='order-btn'>↓</button>
+                          </form>
+                        </div>
+                        <form action='/admin/delete' method='post' style='display:inline'>
+                          <input type='hidden' name='booking_id' value='{r["id"]}'>
+                          <button type='submit' class='del-btn'
+                            onclick="return confirm('確定刪除？')">刪除</button>
+                        </form>
+                      </div>
                     </div>"""
             slot_sections += "</div>"
         slot_sections += "</div>"
