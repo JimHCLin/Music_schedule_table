@@ -804,29 +804,29 @@ def admin_page():
   <!-- 操作說明 -->
   <div style="background:rgba(13,11,20,.75);border:1px solid rgba(201,168,76,.12);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem">
     <div style="font-size:.65rem;letter-spacing:.2em;color:var(--gold-dim);text-transform:uppercase;margin-bottom:.7rem">操作說明</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem">
       <div style="background:rgba(7,5,13,.5);border-radius:7px;padding:.7rem .9rem;border-left:2px solid rgba(201,168,76,.3)">
         <div style="font-size:.75rem;color:var(--gold);font-weight:600;margin-bottom:.35rem">左側數字圓圈</div>
         <div style="font-size:.7rem;color:var(--mist2);line-height:1.6">
-          系統自動排名。<br>金色①＝當前第1順位，依<b style="color:var(--mist)">填表時間早晚</b>自動決定，最早填的排第1。
+          系統自動排名，金色①＝當前第1順位。<br>依<b style="color:var(--mist)">填表時間早晚</b>自動決定，最早填的排第1。
         </div>
       </div>
       <div style="background:rgba(7,5,13,.5);border-radius:7px;padding:.7rem .9rem;border-left:2px solid rgba(42,90,160,.4)">
-        <div style="font-size:.75rem;color:#8aaae8;font-weight:600;margin-bottom:.35rem">志願① ② ③ ＋「改」</div>
+        <div style="font-size:.75rem;color:#8aaae8;font-weight:600;margin-bottom:.35rem">志願序 ① ② ③</div>
         <div style="font-size:.7rem;color:var(--mist2);line-height:1.6">
-          修改<b style="color:var(--mist)">前台圓圈數字</b>。<br>例如學生填錯志願序，老師可在這裡改正，改完前台立即更新。
+          修改<b style="color:var(--mist)">前台圓圈數字</b>。<br>金色高亮＝目前志願序。點任一個按鈕即可直接更改，前台立即更新。
         </div>
       </div>
       <div style="background:rgba(7,5,13,.5);border-radius:7px;padding:.7rem .9rem;border-left:2px solid rgba(80,160,80,.3)">
-        <div style="font-size:.75rem;color:#88c888;font-weight:600;margin-bottom:.35rem">「↑」「↓」上移 / 下移</div>
+        <div style="font-size:.75rem;color:#88c888;font-weight:600;margin-bottom:.35rem">排名 ↑ ↓</div>
         <div style="font-size:.7rem;color:var(--mist2);line-height:1.6">
-          手動調整<b style="color:var(--mist)">後台排名順序</b>。<br>點↑讓此人往前一位，點↓往後一位。多人同一時段時使用，可一步步調整到想要的順序。
+          手動調整<b style="color:var(--mist)">後台排名順序</b>。<br>↑ 讓此人往前一位，↓ 往後一位。多人預約同一時段時使用。
         </div>
       </div>
       <div style="background:rgba(7,5,13,.5);border-radius:7px;padding:.7rem .9rem;border-left:2px solid rgba(139,26,26,.4)">
-        <div style="font-size:.75rem;color:#d89090;font-weight:600;margin-bottom:.35rem">「刪除」</div>
+        <div style="font-size:.75rem;color:#d89090;font-weight:600;margin-bottom:.35rem">刪除</div>
         <div style="font-size:.7rem;color:var(--mist2);line-height:1.6">
-          移除這筆預約。<br>學生可重新至前台填表。刪除前會跳出確認視窗。
+          移除這筆預約，學生可重新至前台填表。<br>點後會跳出確認視窗。
         </div>
       </div>
     </div>
